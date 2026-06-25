@@ -29,9 +29,10 @@ The tracker fuses four evidence-based signal domains into a single composite sco
 
 ```
 bioinfo-school-project/
-├── burnout_tracker.py      # Main analysis script
-├── burnout_report.html     # Generated self-contained HTML report (output)
-├── requirements.txt        # Python dependencies
+├── burnout_tracker.py          # Batch analysis script (all 35 participants)
+├── burnout_self_assessment.html# ✨ Patient-facing self-assessment tool (no Python needed)
+├── burnout_report.html         # Generated cohort report (output of tracker)
+├── requirements.txt            # Python dependencies
 └── SSAQS dataset/
     ├── README.txt          # Original dataset description & citation
     ├── users-courses.csv   # Participant → course & university mapping
@@ -45,7 +46,31 @@ bioinfo-school-project/
 
 ---
 
-## 🚀 Usage
+## ✨ Patient Self-Assessment Tool
+
+[`burnout_self_assessment.html`](burnout_self_assessment.html) is a **standalone interactive tool** — open it in any browser with no Python or server required.
+
+### Features
+- **4-step guided questionnaire**: mind → body tension → activity → sleep
+- **Patient-friendly inputs**: qualitative option cards or wearable data (RMSSD / step count)
+- **Animated gauge** with live score count-up
+- **Plain-English explanation** of what your score means
+- **Score formula transparency**: shows exactly how each domain contributes to the total
+- **Personalised domain insights**: what each signal means for *you* specifically
+- **Actionable recommendations** tailored to your risk level
+
+### Score formula (same logic as `burnout_tracker.py`)
+
+```
+Score = 35% × Psychological Load  +  30% × Nervous System Tension
+      + 20% × Physical Activity   +  15% × Sleep Quality
+```
+
+All domain values are normalised to 0–100 before weighting (0 = healthy, 100 = most at risk).
+
+---
+
+## 🚀 Usage (batch analysis)
 
 ### 1. Install dependencies
 
