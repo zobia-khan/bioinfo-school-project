@@ -1048,9 +1048,9 @@
         <h2 class="step-title">Your Mind</h2>
         <p class="step-desc">
           How you feel mentally day-to-day is the <strong>biggest single driver</strong> of burnout —
-          accounting for 35% of your total score.
+          accounting for 64.1% of your total score.
         </p>
-        <span class="step-weight-pill">📊 Contributes 35% to your score</span>
+        <span class="step-weight-pill">📊 Contributes 64.1% to your score</span>
       </div>
 
       <div class="card">
@@ -1070,23 +1070,7 @@
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-label">How anxious or worried have you felt?</div>
-        <div class="card-hint">Think: constant worrying, nervousness, a sense of dread or unease — even without a
-          specific reason.</div>
-        <div class="slider-row">
-          <span class="slider-emoji">😊</span>
-          <div class="slider-wrap">
-            <input type="range" id="anxiety-slider" min="0" max="10" value="5" step="1" oninput="onSlider('anxiety')">
-          </div>
-          <span class="slider-emoji">😥</span>
-        </div>
-        <div class="slider-value-row">
-          <span class="slider-lbl">Not at all</span>
-          <span class="slider-cur" id="anxiety-cur">Moderate (5)</span>
-          <span class="slider-lbl">Extreme</span>
-        </div>
-      </div>
+      <!-- Anxiety Input Removed (It is now the predicted target) -->
     </section>
 
     <!-- ════════════════════════════════════════════════════════════════════════
@@ -1101,7 +1085,7 @@
           <em>Heart Rate Variability (HRV)</em> is one of the most reliable
           biomarkers of burnout — often rising before you consciously feel it.
         </p>
-        <span class="step-weight-pill">📊 Contributes 30% to your score</span>
+        <span class="step-weight-pill">📊 Contributes 10.8% to your score</span>
       </div>
 
       <div class="card">
@@ -1191,7 +1175,7 @@
           Moving less than you normally do is one of the earliest measurable signs of burnout.
           Your body uses movement to clear stress hormones.
         </p>
-        <span class="step-weight-pill">📊 Contributes 20% to your score</span>
+        <span class="step-weight-pill">📊 Contributes 11.0% to your score</span>
       </div>
 
       <div class="card">
@@ -1280,7 +1264,7 @@
           Sleep is when your brain flushes stress proteins and consolidates memory.
           Poor sleep both <em>causes</em> burnout and makes every other symptom worse.
         </p>
-        <span class="step-weight-pill">📊 Contributes 15% to your score</span>
+        <span class="step-weight-pill">📊 Contributes 14.1% to your score</span>
       </div>
 
       <div class="card">
@@ -1362,6 +1346,27 @@
         </svg>
       </div>
 
+      <!-- Burnout Alert -->
+      <div id="burnout-alert"
+        style="display:none; background: linear-gradient(135deg, rgba(231, 76, 60, 0.1), rgba(142, 0, 0, 0.2)); border: 1px solid rgba(231, 76, 60, 0.3); border-left: 5px solid #e74c3c; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+        <h3 style="color: #ff7675; margin-bottom: 10px; font-weight: 700;">🚨 High Burnout Risk Detected</h3>
+        <p style="color: #b2bec3; font-size: 0.9rem; line-height: 1.5;">Your anxiety score has been over 65 for 7
+          consecutive days. Please consider speaking with a healthcare professional or taking immediate recovery steps.
+        </p>
+      </div>
+
+      <!-- 7-Day Dashboard -->
+      <div
+        style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 22px; margin-bottom: 18px;">
+        <h3 style="font-size: 0.95rem; font-weight: 600; color: #d0d0f0; margin-bottom: 15px;">📅 Your 7-Day Anxiety
+          Trend</h3>
+        <div id="history-chart"
+          style="display: flex; align-items: flex-end; height: 120px; gap: 8px; margin-bottom: 10px;"></div>
+        <div id="history-labels"
+          style="display: flex; justify-content: space-between; gap: 8px; font-size: 0.75rem; color: #6060a0; text-align: center;">
+        </div>
+      </div>
+
       <!-- Plain-language summary -->
       <div class="score-box" id="score-summary"></div>
 
@@ -1369,7 +1374,7 @@
       <div class="formula-box">
         <div class="formula-title">⚖️ How your score was calculated</div>
         <div class="formula-row" id="frow-stress">
-          <span class="formula-lbl"><span class="fi">🧠</span>Psychological (35%)</span>
+          <span class="formula-lbl"><span class="fi">🧠</span>Psychological (64%)</span>
           <div class="formula-bar-wrap">
             <div class="formula-bar-fill" id="fbar-stress"></div>
           </div>
@@ -1501,44 +1506,30 @@
      JAVASCRIPT
 ═══════════════════════════════════════════════════════════════════════════ -->
   <script>
-    /* ── State ─────────────────────────────────────────────────────────────── */
+    // State
     const state = {
       step: 0,
-      stress: 5,   // 0-10
-      anxiety: 5,   // 0-10
-      hrvMode: 'feel',      // 'feel' | 'wear'
-      hrvQual: null,        // 0-4
-      rmssd: null,        // ms
-      actMode: 'feel',      // 'feel' | 'count'
-      actQual: null,        // 0-4
-      steps: null,        // step count
-      sleepQ: 6,           // 0-10
-      sleepHrs: null,
+      stress: 5,
+      hrvMode: 'feel', hrvQual: null, rmssd: null,
+      actMode: 'feel', actQual: null, steps: null,
+      sleepQ: 6, sleepHrs: null,
     };
-
     const TOTAL_Q = 4;
 
-    /* ── Slider label maps ─────────────────────────────────────────────────── */
     const STRESS_LBL = ['None', 'Barely any', 'Very low', 'Low', 'Low-moderate', 'Moderate', 'Moderate-high', 'High', 'Very high', 'Severe', 'Extreme'];
-    const ANXIETY_LBL = ['None', 'Barely any', 'Very low', 'Low', 'Mild', 'Moderate', 'Noticeable', 'High', 'Very high', 'Severe', 'Extreme'];
     const SLEEP_LBL = ['Terrible', 'Very poor', 'Poor', 'Below avg', 'Fair', 'Okay', 'Good', 'Very good', 'Excellent', 'Outstanding', 'Perfect'];
 
-    /* ── HRV qualitative → norm map ────────────────────────────────────────── */
-    //   [calm, slight, tense, racing, overwhelmed]  → burnout norm 0-1
     const HRV_MAP = [0.0, 0.2, 0.5, 0.78, 1.0];
-    //   [more active, same, less, much less, barely]
     const ACT_MAP = [0.0, 0.08, 0.40, 0.72, 1.0];
-    const STEPS_BASELINE = 8000; // daily healthy baseline
+    const STEPS_BASELINE = 8000;
 
-    /* ── Slider updates ────────────────────────────────────────────────────── */
     function onSlider(name) {
       const v = parseInt(document.getElementById(name + '-slider').value);
-      const map = name === 'sleep' ? SLEEP_LBL : name === 'anxiety' ? ANXIETY_LBL : STRESS_LBL;
+      const map = name === 'sleep' ? SLEEP_LBL : STRESS_LBL;
       document.getElementById(name + '-cur').textContent = `${map[v]} (${v})`;
       state[name === 'sleep' ? 'sleepQ' : name] = v;
     }
 
-    /* ── Option card picker ────────────────────────────────────────────────── */
     function pickOpt(type, val) {
       const listId = type + '-opts';
       document.querySelectorAll(`#${listId} .opt`).forEach(el => el.classList.remove('selected'));
@@ -1548,7 +1539,6 @@
       if (type === 'act') state.actQual = val;
     }
 
-    /* ── Mode toggles ──────────────────────────────────────────────────────── */
     function setMode(type, mode) {
       if (type === 'hrv') {
         state.hrvMode = mode;
@@ -1565,7 +1555,6 @@
       }
     }
 
-    /* ── Navigation ────────────────────────────────────────────────────────── */
     function startAssessment() { go(1); }
     function nextStep() {
       if (!validate()) return;
@@ -1583,25 +1572,19 @@
           cur.classList.remove('exiting');
           activate(n);
         }, 260);
-      } else {
-        activate(n);
-      }
+      } else { activate(n); }
     }
 
     function activate(n) {
       state.step = n;
       document.getElementById('step-' + n).classList.add('active');
-
       const hdr = document.getElementById('progress-header');
       const nav = document.getElementById('nav-bar');
-
       if (n === 0 || n === 5) {
-        // Hide header/nav BEFORE any scroll so sticky header never flashes
         hdr.classList.add('hidden');
         hdr.style.display = 'none';
         nav.classList.add('hidden');
         nav.style.display = 'none';
-        // On results page scroll gently; on welcome stay put
         if (n === 5) window.scrollTo({ top: 0 });
       } else {
         hdr.style.display = '';
@@ -1610,42 +1593,18 @@
         nav.classList.remove('hidden');
         document.getElementById('progress-fill').style.width = ((n - 1) / TOTAL_Q * 100) + '%';
         document.getElementById('hdr-step-label').textContent = `Step ${n} of ${TOTAL_Q}`;
-        document.getElementById('hdr-step-name').textContent =
-          ['', 'Your Mind', 'Your Body', 'Your Activity', 'Your Sleep'][n] || '';
+        document.getElementById('hdr-step-name').textContent = ['', 'Your Mind', 'Your Body', 'Your Activity', 'Your Sleep'][n] || '';
         document.getElementById('btn-next').textContent = n === TOTAL_Q ? 'See My Results →' : 'Next →';
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
 
-    /* ── Validation ────────────────────────────────────────────────────────── */
     function validate() {
       if (state.step === 2) {
-        if (state.hrvMode === 'feel' && state.hrvQual === null) {
-          shake('hrv-opts'); return false;
-        }
-        if (state.hrvMode === 'wear') {
-          const inp = document.getElementById('rmssd-val');
-          if (!state.rmssd || isNaN(state.rmssd)) {
-            inp.classList.add('error-ring');
-            inp.focus();
-            setTimeout(() => inp.classList.remove('error-ring'), 2000);
-            return false;
-          }
-        }
+        if (state.hrvMode === 'feel' && state.hrvQual === null) { shake('hrv-opts'); return false; }
       }
       if (state.step === 3) {
-        if (state.actMode === 'feel' && state.actQual === null) {
-          shake('act-opts'); return false;
-        }
-        if (state.actMode === 'count') {
-          const inp = document.getElementById('steps-val');
-          if (!state.steps || isNaN(state.steps)) {
-            inp.classList.add('error-ring');
-            inp.focus();
-            setTimeout(() => inp.classList.remove('error-ring'), 2000);
-            return false;
-          }
-        }
+        if (state.actMode === 'feel' && state.actQual === null) { shake('act-opts'); return false; }
       }
       return true;
     }
@@ -1653,308 +1612,197 @@
     function shake(id) {
       const el = document.getElementById(id);
       el.classList.add('shake');
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setTimeout(() => el.classList.remove('shake'), 400);
     }
 
-    /* ── Score Computation ─────────────────────────────────────────────────── */
-    function computeScore() {
-      // Stress/Anxiety → norm 0-1 (1 = worst)
-      const stressNorm = (state.stress + state.anxiety) / 2 / 10;
+    // --- New ML Weights ---
+    const WEIGHTS = { stress: 0.641, hrv: 0.108, steps: 0.110, sleep: 0.141 };
 
-      // HRV/body tension norm
+    function computeScore() {
+      const stressNorm = state.stress / 10;
+
       let hrvNorm;
       if (state.hrvMode === 'wear' && state.rmssd !== null) {
-        // RMSSD 80ms → norm 0 (healthy), 20ms → norm 1 (stressed)
         const r = Math.max(20, Math.min(80, state.rmssd));
         hrvNorm = 1 - (r - 20) / 60;
-      } else {
-        hrvNorm = HRV_MAP[state.hrvQual ?? 2];
-      }
+      } else { hrvNorm = HRV_MAP[state.hrvQual ?? 2]; }
 
-      // Steps norm (1 = very inactive)
       let stepsNorm;
       if (state.actMode === 'count' && state.steps !== null) {
         stepsNorm = Math.max(0, Math.min(1, 1 - state.steps / STEPS_BASELINE));
-      } else {
-        stepsNorm = ACT_MAP[state.actQual ?? 1];
-      }
+      } else { stepsNorm = ACT_MAP[state.actQual ?? 1]; }
 
-      // Sleep norm (1 = terrible sleep → more burnout)
       const sleepNorm = 1 - state.sleepQ / 10;
 
-      /* Weighted composite — mirrors burnout_tracker.py exactly:
-         Score = 100 × (0.35×stress + 0.30×hrv + 0.20×steps + 0.15×sleep)
-      */
-      const raw = 0.35 * stressNorm + 0.30 * hrvNorm + 0.20 * stepsNorm + 0.15 * sleepNorm;
+      const raw = (WEIGHTS.stress * stressNorm) + (WEIGHTS.hrv * hrvNorm) + (WEIGHTS.steps * stepsNorm) + (WEIGHTS.sleep * sleepNorm);
       const score = Math.round(raw * 100);
 
-      return {
-        score,
-        stressN: stressNorm,
-        hrvN: hrvNorm,
-        stepsN: stepsNorm,
-        sleepN: sleepNorm,
-        // Raw domain burnout contribution (0-100)
-        stress: Math.round(stressNorm * 100),
-        hrv: Math.round(hrvNorm * 100),
-        steps: Math.round(stepsNorm * 100),
-        sleep: Math.round(sleepNorm * 100),
-        // Weighted contribution to final score
-        stressW: Math.round(stressNorm * 0.35 * 100),
-        hrvW: Math.round(hrvNorm * 0.30 * 100),
-        stepsW: Math.round(stepsNorm * 0.20 * 100),
-        sleepW: Math.round(sleepNorm * 0.15 * 100),
-      };
+      return { score, stressN: stressNorm, hrvN: hrvNorm, stepsN: stepsNorm, sleepN: sleepNorm, stress: Math.round(stressNorm * 100), hrv: Math.round(hrvNorm * 100), steps: Math.round(stepsNorm * 100), sleep: Math.round(sleepNorm * 100), stressW: Math.round(stressNorm * WEIGHTS.stress * 100), hrvW: Math.round(hrvNorm * WEIGHTS.hrv * 100), stepsW: Math.round(stepsNorm * WEIGHTS.steps * 100), sleepW: Math.round(sleepNorm * WEIGHTS.sleep * 100) };
     }
 
-    /* ── Risk helpers ──────────────────────────────────────────────────────── */
     function riskTier(pct) {
       if (pct < 40) return { label: 'Low Risk', color: '#2ecc71', tier: 'low' };
       if (pct < 65) return { label: 'Moderate Risk', color: '#f39c12', tier: 'mod' };
       return { label: 'High Risk', color: '#e74c3c', tier: 'hi' };
     }
 
-    /* ── Build results ─────────────────────────────────────────────────────── */
+    // --- 7-Day Storage ---
+    // --- 7-Day Storage (Discrete Sessions) ---
+    function saveDailyScore(score) {
+      let raw = localStorage.getItem('burnoutHistory');
+      let history = [];
+      try {
+        let parsed = JSON.parse(raw || '[]');
+        history = parsed.map(item => typeof item === 'object' ? item.score : item);
+      } catch(e) {}
+      
+      // Only save if we haven't reached 7 days in this session
+      if (history.length < 7) {
+        history.push(score);
+        localStorage.setItem('burnoutHistory', JSON.stringify(history));
+      }
+      return history;
+    }
+
     function buildResults() {
       const R = computeScore();
       const risk = riskTier(R.score);
 
-      // Date
-      document.getElementById('res-date').textContent =
-        new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      // Save to localStorage
+      const history = saveDailyScore(R.score);
 
-      // Gauge (delayed to allow step transition)
+      // Session Prediction (Evaluate after 7 days)
+      if (history.length >= 7) {
+        document.querySelector('.btn-restart').innerHTML = '↻ Start New 7-Day Session';
+        
+        let consecutiveHigh = 0;
+        history.forEach(scoreVal => {
+          if (scoreVal > 65) consecutiveHigh++;
+          else consecutiveHigh = 0;
+        });
+
+        if (consecutiveHigh >= 7) {
+          document.getElementById('burnout-alert').innerHTML = `
+            <div class="alert-icon">🚨</div>
+            <div class="alert-content">
+              <strong>High Burnout Risk Detected</strong><br>
+              You have scored over 65 for 7 consecutive days. Your nervous system is showing signs of severe chronic stress and your burnout risk is critical. Please prioritize immediate recovery.
+            </div>`;
+          document.getElementById('burnout-alert').style.backgroundColor = 'rgba(231, 76, 60, 0.15)';
+          document.getElementById('burnout-alert').style.border = '1px solid #e74c3c';
+        } else {
+          document.getElementById('burnout-alert').innerHTML = `
+            <div class="alert-icon" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71;">✅</div>
+            <div class="alert-content">
+              <strong style="color: #2ecc71;">7-Day Session Complete</strong><br>
+              You have completed your 7-day tracking. You did not meet the criteria for critical burnout risk (7 days over 65). Great job managing your stress!
+            </div>`;
+          document.getElementById('burnout-alert').style.backgroundColor = 'rgba(46, 204, 113, 0.05)';
+          document.getElementById('burnout-alert').style.border = '1px solid #2ecc71';
+        }
+        document.getElementById('burnout-alert').style.display = 'flex';
+      } else {
+        document.querySelector('.btn-restart').innerHTML = '↻ Log Next Day';
+        document.getElementById('burnout-alert').style.display = 'none';
+      }
+
+      // Render Dashboard (Always show past 7 days)
+      const chartEl = document.getElementById('history-chart');
+      const labelsEl = document.getElementById('history-labels');
+      chartEl.innerHTML = ''; labelsEl.innerHTML = '';
+
+      const todayDate = new Date();
+      // We map history[length - 1] to i=0 (today), history[length - 2] to i=1 (yesterday), etc.
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(todayDate);
+        d.setDate(d.getDate() - i);
+        const dStr = d.toLocaleDateString('en-US', { weekday: 'short' });
+
+        const histIndex = history.length - 1 - i;
+        const scoreVal = histIndex >= 0 ? history[histIndex] : null;
+
+        if (scoreVal !== null) {
+          const rt = riskTier(scoreVal);
+          const barHeight = Math.max(10, scoreVal) + '%';
+          chartEl.innerHTML += `<div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%;">
+            <div style="width: 100%; max-width: 45px; border-radius: 4px 4px 0 0; background: ${rt.color}; height: ${barHeight}; min-height: 10px; transition: height 1s ease;"></div>
+          </div>`;
+          labelsEl.innerHTML += `<div style="flex: 1;">${dStr}<br><strong style="color: ${rt.color}">${scoreVal}</strong></div>`;
+        } else {
+          chartEl.innerHTML += `<div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%;">
+            <div style="width: 100%; max-width: 45px; border-radius: 4px 4px 0 0; background: rgba(255,255,255,0.05); height: 10px; min-height: 10px;"></div>
+          </div>`;
+          labelsEl.innerHTML += `<div style="flex: 1;">${dStr}<br><strong style="color: rgba(255,255,255,0.2)">—</strong></div>`;
+        }
+      }
+
+      document.getElementById('res-date').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       setTimeout(() => animateGauge(R.score, risk.color, risk.label), 350);
-
-      // Summary
       document.getElementById('score-summary').innerHTML = buildSummary(R, risk);
-
-      // Formula rows
       renderFormulaRow('stress', R.stressW, risk.color, R.stressN);
       renderFormulaRow('hrv', R.hrvW, risk.color, R.hrvN);
       renderFormulaRow('steps', R.stepsW, risk.color, R.stepsN);
       renderFormulaRow('sleep', R.sleepW, risk.color, R.sleepN);
 
-      // Domain cards
-      renderDomain('stress', R.stress, stressInsight(R.stress, R.stress));
-      renderDomain('hrv', R.hrv, hrvInsight(R.hrv));
-      renderDomain('steps', R.steps, stepsInsight(R.steps));
-      renderDomain('sleep', R.sleep, sleepInsight(R.sleep));
-
-      // Recommendations
-      document.getElementById('recs-list').innerHTML = buildRecs(R.score, R).join('');
+      // Hide old domains / recs since we simplified the results screen for the dashboard
+      const domainsEl = document.querySelector('.domains-section');
+      if (domainsEl) domainsEl.style.display = 'none';
+      const recsEl = document.querySelector('.recs-section');
+      if (recsEl) recsEl.style.display = 'none';
     }
 
-    /* ── Gauge animation ───────────────────────────────────────────────────── */
     function animateGauge(score, color, riskLabel) {
-      /*
-        Arc total length for 240° sweep, r=80:
-        (240/360) × 2π × 80 = 335.10
-      */
       const ARC_LEN = 335.10;
       const fillLen = (score / 100) * ARC_LEN;
-      const offset = ARC_LEN - fillLen;
-
       const fillEl = document.getElementById('gauge-fill');
       fillEl.style.stroke = color;
       fillEl.style.strokeDasharray = `${ARC_LEN} ${ARC_LEN}`;
-      fillEl.style.strokeDashoffset = ARC_LEN;   // start empty
-
-      // trigger transition on next frame
+      fillEl.style.strokeDashoffset = ARC_LEN;
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           fillEl.style.transition = 'stroke-dashoffset 1.3s cubic-bezier(.4,0,.2,1), stroke 0.4s';
-          fillEl.style.strokeDashoffset = offset;
+          fillEl.style.strokeDashoffset = ARC_LEN - fillLen;
         });
       });
-
-      // background track (always full)
-      const bgEl = document.getElementById('gauge-bg');
-      bgEl.style.strokeDasharray = `${ARC_LEN} ${ARC_LEN}`;
-      bgEl.style.strokeDashoffset = 0;
-
-      // count-up number
-      const numEl = document.getElementById('gauge-num');
-      numEl.setAttribute('fill', color);
-      const start = performance.now();
-      const dur = 1300;
-      function tick(now) {
-        const t = Math.min(1, (now - start) / dur);
-        const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
-        numEl.textContent = Math.round(eased * score);
-        if (t < 1) requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
-
-      // risk label
-      const riskEl = document.getElementById('gauge-risk');
-      riskEl.textContent = riskLabel;
-      riskEl.setAttribute('fill', color);
+      document.getElementById('gauge-num').textContent = score;
+      document.getElementById('gauge-num').setAttribute('fill', color);
+      document.getElementById('gauge-risk').textContent = riskLabel;
+      document.getElementById('gauge-risk').setAttribute('fill', color);
     }
 
-    /* ── Formula row ───────────────────────────────────────────────────────── */
     function renderFormulaRow(name, weightedScore, color, norm) {
-      document.getElementById('fval-' + name).textContent = weightedScore;
-      document.getElementById('fval-' + name).style.color = riskTier(norm * 100).color;
-      const bar = document.getElementById('fbar-' + name);
-      bar.style.background = riskTier(norm * 100).color;
-      setTimeout(() => { bar.style.width = (norm * 100) + '%'; }, 450);
+      const el = document.getElementById('fval-' + name);
+      if (el) {
+        el.textContent = weightedScore;
+        el.style.color = riskTier(norm * 100).color;
+        const bar = document.getElementById('fbar-' + name);
+        bar.style.background = riskTier(norm * 100).color;
+        setTimeout(() => { bar.style.width = (norm * 100) + '%'; }, 450);
+      }
     }
 
-    /* ── Domain card render ────────────────────────────────────────────────── */
-    function renderDomain(name, pct, insight) {
-      const { color, label } = riskTier(pct);
-      document.getElementById('dc-' + name + '-score').textContent = `${label.replace(' Risk', '')} (${pct}/100)`;
-      document.getElementById('dc-' + name + '-score').style.color = color;
-      const bar = document.getElementById('db-' + name);
-      bar.style.background = color;
-      setTimeout(() => { bar.style.width = pct + '%'; }, 500);
-      document.getElementById('di-' + name).innerHTML = insight;
-    }
-
-    /* ── Plain-language summaries ──────────────────────────────────────────── */
     function buildSummary(R, risk) {
-      // Find top weighted contributor
-      const contribs = [
-        { n: 'stress and anxiety', w: R.stressW },
-        { n: 'nervous system tension', w: R.hrvW },
-        { n: 'reduced physical activity', w: R.stepsW },
-        { n: 'sleep quality', w: R.sleepW },
-      ].sort((a, b) => b.w - a.w);
-      const top = contribs[0].n;
-      const s = R.score;
-
-      let opening, body;
-      if (s < 20) {
-        opening = '✅ You\'re in great shape!';
-        body = `Your burnout indicators are all healthy. Keep protecting the habits that are working — regular movement, good sleep, and managing stress early.`;
-      } else if (s < 40) {
-        opening = '🟢 Your burnout risk is low.';
-        body = `Everything looks well-balanced. <em>Your biggest area to watch</em> is <strong>${top}</strong>, but it\'s not alarming. Check in again next week to track any trends.`;
-      } else if (s < 55) {
-        opening = '🟡 Some burnout signals are present.';
-        body = `Your score suggests <strong>moderate risk</strong>. <strong>${capitalise(top)}</strong> is contributing most. This is the ideal time to act — catching burnout early prevents it from becoming severe.`;
-      } else if (s < 65) {
-        opening = '🟡 Your body and mind are under strain.';
-        body = `You\'re in the <strong>moderate-to-high zone</strong>. Multiple indicators are elevated. <strong>${capitalise(contribs[0].n)}</strong> and <strong>${contribs[1].n}</strong> are your two biggest stressors. Without some recovery, this level tends to worsen over time.`;
-      } else if (s < 80) {
-        opening = '🔴 High burnout risk detected.';
-        body = `Your score of <strong>${s}/100</strong> is in the <strong>high-risk range</strong>. Especially <strong>${top}</strong>. At this level, burnout affects your concentration, immune system, decision-making, and relationships. Please prioritise rest and consider speaking with someone you trust or a healthcare professional.`;
-      } else {
-        opening = '🔴 Very high burnout risk.';
-        body = `Your score of <strong>${s}/100</strong> is very high — almost all your indicators are under significant strain. Burnout at this severity does not resolve on its own. <strong>Please reach out to a doctor, counsellor, or trusted person as soon as possible.</strong>`;
-      }
-
-      return `<strong>${opening}</strong><br><br>Your burnout score is <strong style="color:${risk.color}">${R.score} / 100 &nbsp;·&nbsp; ${risk.label}</strong>.<br><br>${body}`;
+      return `<strong>Anxiety Risk Score</strong><br><br>Your predicted anxiety score is <strong style="color:${risk.color}">${R.score} / 100 &nbsp;·&nbsp; ${risk.label}</strong>.<br><br>The model places 64% of the weight on your subjective stress, but also monitors your physical biomarkers (HRV, Steps, Sleep) which account for 36% of your total burnout risk.`;
     }
 
-    function capitalise(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-
-    /* ── Domain insights ───────────────────────────────────────────────────── */
-    function stressInsight(pct) {
-      if (pct < 25) return `Your stress and anxiety are <em>well-managed</em> today — this is your strongest domain. Stress is the primary burnout driver (35% weight), so keeping it here is genuinely protective.`;
-      if (pct < 50) return `You're carrying a <em>moderate psychological load</em>. Stress and anxiety account for the largest share of your burnout score. Small daily decompression habits — even 5 minutes — compound significantly over time.`;
-      if (pct < 75) return `Your stress and anxiety levels are <em>quite elevated</em>. Chronic high stress is the #1 driver of burnout. It dysregulates your nervous system, disrupts sleep, suppresses immunity, and lowers your capacity to feel positive emotions.`;
-      return `<em>Extreme psychological load</em> is flagged. This is the strongest contributor to your score. Your mind urgently needs space to decompress. Continuing at this level without intervention is likely to accelerate burnout significantly.`;
-    }
-
-    function hrvInsight(pct) {
-      if (pct < 25) return `Your body appears to be <em>recovering well</em>. Good heart rate variability means your autonomic nervous system is balanced between activation and rest — a strong sign of physiological resilience.`;
-      if (pct < 50) return `Some <em>physical tension</em> is present. Your nervous system may be running hotter than it should at rest. This often shows up as muscle tightness, shallow breathing, or difficulty fully unwinding, even when you have time.`;
-      if (pct < 75) return `Your body is showing <em>significant autonomic stress</em>. Low HRV is a reliable early-warning biomarker for burnout — it often appears before you consciously feel "burnt out." This is your body signalling that it needs more recovery.`;
-      return `Your nervous system appears <em>severely dysregulated</em>. At this level, chronic autonomic overload impairs digestion, sleep quality, immune response, and cognitive function. Prioritising rest and recovery techniques (breathing, nature, sleep) is critical.`;
-    }
-
-    function stepsInsight(pct) {
-      if (pct < 20) return `<em>Great activity level!</em> Regular movement is one of the most powerful buffers against burnout — it resets cortisol, improves mood via endorphins, and directly improves sleep quality.`;
-      if (pct < 45) return `Your activity has <em>dipped slightly</em> — common during stressful periods. Even a 15-minute walk outdoors lowers cortisol measurably. You don't need a gym; just consistent gentle movement.`;
-      if (pct < 72) return `Your physical activity has <em>dropped significantly</em>. Inactivity reinforces the stress-burnout cycle: low energy → less movement → higher stress hormones → even lower energy. Breaking this loop with small consistent movement is key.`;
-      return `<em>Very low physical activity</em> detected. Burnout often creates a feedback loop where exhaustion prevents movement, and lack of movement worsens exhaustion and increases inflammatory markers. Even 5-minute walks multiple times a day can begin to break this cycle.`;
-    }
-
-    function sleepInsight(pct) {
-      if (pct < 20) return `<em>Excellent sleep!</em> This is significantly protecting your burnout score. Sleep is when your brain processes stress, clears metabolic waste, and consolidates learning. Keep protecting your sleep window.`;
-      if (pct < 45) return `Your sleep quality is <em>moderate</em>. Sleep disturbances are both a symptom and a cause of burnout — they create a cycle that's hard to break. Consistent sleep and wake times matter more than sleeping longer.`;
-      if (pct < 72) return `<em>Poor sleep</em> is adding meaningfully to your burnout burden. Even a single night of disrupted sleep increases cortisol, reduces emotional regulation capacity, and impairs prefrontal function — your ability to think clearly and stay calm.`;
-      return `<em>Very poor sleep</em> is a significant contributor. Chronic sleep deprivation at this level has similar short-term cognitive effects to alcohol intoxication, and is closely associated with severe burnout and increased mental health risk. This needs active attention.`;
-    }
-
-    /* ── Recommendations ───────────────────────────────────────────────────── */
-    function buildRecs(score, R) {
-      const recs = [];
-
-      if (R.stress >= 45) {
-        recs.push(rec('🧘', '5-minute box breathing',
-          'Breathe in for 4 counts → hold 4 → out 4 → hold 4. Repeat 5×. This activates your parasympathetic nervous system within minutes and measurably reduces cortisol. Do it before bed or during breaks.'));
-      }
-      if (R.hrv >= 45) {
-        recs.push(rec('🫁', 'Slow breathing to reset your nervous system',
-          'Breathe at ~6 breaths/minute: 5 seconds in, 5 seconds out. Clinically proven to improve HRV and reduce sympathetic tone. 10 minutes before sleep is ideal. Free apps like "Breathwork" can guide you.'));
-      }
-      if (R.steps >= 38) {
-        recs.push(rec('🚶', 'Take a 15–20 min walk outside today',
-          'A short outdoor walk lowers cortisol by up to 20%, improves mood, and boosts creative thinking. You don\'t need a gym — just shoes and daylight. Schedule it like a meeting.'));
-      }
-      if (R.sleep >= 38) {
-        recs.push(rec('🌙', 'Protect tonight\'s sleep window',
-          'Set a screen-off alarm 30 min before bed. Keep your room cool (16–19°C), dark, and quiet. A consistent wake time — even on weekends — is the single most powerful sleep lever.'));
-      }
-      if (score >= 65) {
-        recs.push(rec('🗣️', 'Talk to someone you trust',
-          'High burnout rarely resolves on its own. Sharing how you\'re really feeling with a friend, mentor, student counsellor, or GP is one of the most effective interventions. You don\'t have to manage this alone.'));
-      }
-      if (score >= 50) {
-        recs.push(rec('📵', 'Schedule two "no-email" hours per day',
-          'Constant task-switching and notification checking keeps your stress system activated. Batching communication into two focused windows gives your nervous system real recovery time.'));
-      }
-      if (score < 40) {
-        recs.push(rec('✅', 'Maintain your current habits',
-          'Your indicators are healthy. The best thing you can do is protect what\'s working: consistent sleep timing, regular movement, stress management. Consider a weekly check-in to spot trends early.'));
-        recs.push(rec('📅', 'Consider a weekly check-in',
-          'Burnout develops gradually. Re-taking this assessment once a week (same time, same conditions) gives you a personal trend line that can catch early warning signals before they become serious.'));
-      }
-      if (recs.length === 0) {
-        recs.push(rec('📅', 'Keep tracking',
-          'Your score looks manageable. Return in a week — consistency in tracking is more valuable than any single snapshot.'));
-      }
-
-      return recs.slice(0, 4);
-    }
-
-    function rec(icon, head, body) {
-      return `
-    <div class="rec-card">
-      <span class="rec-icon">${icon}</span>
-      <div>
-        <div class="rec-head">${head}</div>
-        <div class="rec-body">${body}</div>
-      </div>
-    </div>`;
-    }
-
-    /* ── Restart ───────────────────────────────────────────────────────────── */
     function restart() {
-      Object.assign(state, {
-        step: 0, stress: 5, anxiety: 5, hrvMode: 'feel', hrvQual: null, rmssd: null,
-        actMode: 'feel', actQual: null, steps: null, sleepQ: 6, sleepHrs: null,
-      });
+      // If session is complete, clear data to start fresh
+      let history = JSON.parse(localStorage.getItem('burnoutHistory') || '[]');
+      if (history.length >= 7) {
+        localStorage.removeItem('burnoutHistory');
+      }
+
+      Object.assign(state, { stress: 5, hrvMode: 'feel', hrvQual: null, rmssd: null, actMode: 'feel', actQual: null, steps: null, sleepQ: 6, sleepHrs: null });
       document.getElementById('stress-slider').value = 5;
-      document.getElementById('anxiety-slider').value = 5;
       document.getElementById('sleep-slider').value = 6;
-      ['stress', 'anxiety', 'sleep'].forEach(onSlider);
+      ['stress', 'sleep'].forEach(onSlider);
       document.querySelectorAll('.opt.selected').forEach(el => el.classList.remove('selected'));
-      document.getElementById('rmssd-val').value = '';
-      document.getElementById('steps-val').value = '';
-      document.getElementById('hours-val').value = '';
-      setMode('hrv', 'feel');
-      setMode('act', 'feel');
+      setMode('hrv', 'feel'); setMode('act', 'feel');
+      document.getElementById('burnout-alert').style.display = 'none';
       go(0);
     }
 
-    /* ── Init ──────────────────────────────────────────────────────────────── */
     onSlider('stress');
-    onSlider('anxiety');
     onSlider('sleep');
   </script>
 </body>
